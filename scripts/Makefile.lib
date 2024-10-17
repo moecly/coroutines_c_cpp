@@ -1,0 +1,16 @@
+asflags-y  += $(EXTRA_AFLAGS)
+ccflags-y  += $(EXTRA_CFLAGS)
+cppflags-y += $(EXTRA_CPPFLAGS)
+ldflags-y  += $(EXTRA_LDFLAGS)
+arflags-y  += $(EXTRA_ARFLAGS)
+
+obj-y		:= $(addprefix $(obj)/,$(obj-y))
+lib-y		:= $(addprefix $(obj)/,$(lib-y))
+
+# Set compiler
+a_flags   = $(KBUILD_AFLAGS) $(asflags-y)
+c_flags   = $(KBUILD_CFLAGS) $(ccflags-y)
+cpp_flags = $(KBUILD_CPPFLAGS) $(cppflags-y) 
+ld_flags  = $(KBUILD_LDFLAGS) $(ldflags-y)
+ar_flags  = $(KBUILD_ARFLAGS) $(arflags-y)
+

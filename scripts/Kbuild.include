@@ -1,0 +1,22 @@
+###
+# Shorthand for $(Q)$(MAKE) -f scripts/Makefile.build obj=
+# Usage:
+# $(Q)$(MAKE) $(build)=dir
+build := -f $(srctree)/scripts/Makefile.build obj
+
+###
+# Shorthand for $(Q)$(MAKE) -f scripts/Makefile.clean obj=
+# Usage:
+# $(Q)$(MAKE) $(clean)=dir
+clean := -f $(srctree)/scripts/Makefile.clean obj
+
+save-cmd = echo '$@ := $(cmd_$(1))' > $(dir $@).$(notdir $@).cmd
+
+cmd = \
+    @\
+    $(call save-cmd,$(1)); \
+    $(if $(Q), \
+    echo '  $($(quiet)cmd_$(1))', \
+    echo '$(cmd_$(1))'); \
+    $(call cmd_$(1))
+    

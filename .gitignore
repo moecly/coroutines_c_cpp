@@ -1,0 +1,10 @@
+.VSCodeCounter/
+.vscode
+GPATH
+GRTAGS
+GTAGS
+*.exe
+*.cmd
+*.o
+*.su
+*.a
