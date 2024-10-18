@@ -6,8 +6,16 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-/* Protothread status values */
+// #define CO_USE_SETJMP
+
+#if defined(CO_USE_SETJMP)
+#include <setjmp.h>
+#endif
+
+/* coroutines status values */
 #define CO_STATUS_BLOCKED 0
 #define CO_STATUS_FINISHED -1
 #define CO_STATUS_YIELDED -2
@@ -15,20 +23,30 @@ extern "C" {
 #define __co_line2(name, line) __co_##name_##line
 #define __co_line(name) __co_line2(name, __LINE__)
 
-#if defined(CO_USE_SETJMP)
-#include <setjmp.h>
-
 typedef struct co {
+    int status;
+    uint8_t *heap;
+    uint32_t heap_use;
+    uint32_t heap_size;
+#if defined(CO_USE_SETJMP)
     jmp_buf env;
     int is_set;
-    int status;
+#else
+    uint32_t label;
+#endif
 } co_t;
 
-#define co_init(co)                                                         \
-    do {                                                                    \
+#if defined(CO_USE_SETJMP)
+
+#define co_init(co, size)                                                   \
+    ({                                                                      \
         (co)->is_set = 0;                                                   \
         (co)->status = 0;                                                   \
-    } while (0)
+        (co)->heap = (uint8_t *)malloc(size);                               \
+        (co)->heap_use = 0;                                                 \
+        (co)->heap_size = size;                                             \
+        (void *)((co)->heap ? (co)->heap : NULL);                           \
+    })
 
 #define co_begin(co)                                                        \
     do {                                                                    \
@@ -39,6 +57,7 @@ typedef struct co {
 
 #define co_label(co, stat)                                                  \
     do {                                                                    \
+        (co)->heap_use = 0;                                                 \
         (co)->is_set = 1;                                                   \
         (co)->status = (stat);                                              \
         setjmp((co)->env);                                                  \
@@ -46,18 +65,20 @@ typedef struct co {
 
 #define co_end(co) co_label(co, CO_STATUS_FINISHED)
 
+#define co_deinit(co)                                                       \
+    free((co)->heap)
+
 #else
 
-typedef struct co {
-    int label;
-    int status;
-} co_t;
-
-#define co_init(co)                                                         \
-    do {                                                                    \
+#define co_init(co, size)                                                   \
+    ({                                                                      \
         (co)->label = 0;                                                    \
         (co)->status = 0;                                                   \
-    } while (0)
+        (co)->heap = (uint8_t *)malloc(size);                               \
+        (co)->heap_use = 0;                                                 \
+        (co)->heap_size = size;                                             \
+        (void *)((co)->heap ? (co)->heap : NULL);                           \
+    })
 
 #define co_begin(co)                                                        \
     switch ((co)->label) {                                                  \
@@ -65,6 +86,7 @@ typedef struct co {
 
 #define co_label(co, stat)                                                  \
     do {                                                                    \
+        (co)->heap_use = 0;                                                 \
         (co)->label = __LINE__;                                             \
         (co)->status = stat;                                                \
     case __LINE__:;                                                         \
@@ -74,10 +96,13 @@ typedef struct co {
     co_label(co, CO_STATUS_FINISHED);                                       \
     }
 
+#define co_deinit(co)                                                       \
+    free((co)->heap)
+
 #endif
 
 /*
- * Core co API
+ * Core coroutines API
  */
 #define co_status(co) (co)->status
 
@@ -102,6 +127,11 @@ typedef struct co {
         co_label(co, stat);                                                 \
         return;                                                             \
     } while (0)
+
+#define co_new(co, size)                                                    \
+    (void *)((((co)->heap_use) + (size)) <= (co)->heap_size ?               \
+    (&(co)->heap[(co)->heap_use]) : NULL);                                  \
+    (co)->heap_use += size;
 
 #ifdef __cplusplus
 }
