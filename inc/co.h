@@ -9,8 +9,6 @@ extern "C" {
 #include <stdlib.h>
 #include <stdint.h>
 
-// #define CO_USE_SETJMP
-
 #if defined(CO_USE_SETJMP)
 #include <setjmp.h>
 #endif
@@ -22,6 +20,8 @@ extern "C" {
 
 #define __co_line2(name, line) __co_##name_##line
 #define __co_line(name) __co_line2(name, __LINE__)
+
+#define co_new_mem malloc
 
 typedef struct co {
     int status;
@@ -42,7 +42,7 @@ typedef struct co {
     ({                                                                      \
         (co)->is_set = 0;                                                   \
         (co)->status = 0;                                                   \
-        (co)->heap = (uint8_t *)malloc(size);                               \
+        (co)->heap = (uint8_t *)co_new_mem(size);                           \
         (co)->heap_use = 0;                                                 \
         (co)->heap_size = size;                                             \
         (void *)((co)->heap ? (co)->heap : NULL);                           \
@@ -74,7 +74,7 @@ typedef struct co {
     ({                                                                      \
         (co)->label = 0;                                                    \
         (co)->status = 0;                                                   \
-        (co)->heap = (uint8_t *)malloc(size);                               \
+        (co)->heap = (uint8_t *)co_new_mem(size);                           \
         (co)->heap_use = 0;                                                 \
         (co)->heap_size = size;                                             \
         (void *)((co)->heap ? (co)->heap : NULL);                           \
