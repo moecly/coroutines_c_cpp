@@ -31,9 +31,12 @@ int main(void) {
     co_t co1;
     co_init(&co0, 1024);
     co_init(&co1, 1024);
-    while (1) {
+    while (co_status(&co0) != CO_STATUS_FINISHED && 
+           co_status(&co1) != CO_STATUS_FINISHED) {
         test0(&co0);
         test1(&co1);
     }
+    co_deinit(&co0);
+    co_deinit(&co1);
     return 0;
 }
